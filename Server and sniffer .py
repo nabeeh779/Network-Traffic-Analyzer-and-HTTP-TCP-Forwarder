@@ -1,4 +1,5 @@
 import os
+import time
 import scapy.all as scapy
 import logging
 import socket
@@ -9,6 +10,10 @@ from packet_sniffer import *
 from observers import *
 from factory import *
 
+# pcap file to save captured packets
+pcap_file = 'captured_packets.pcap'
+#Initialize protocols
+protocols = ["HTTP", "DNS", "FTP", "SMTP", "Ether"]
 # setting up logging
 logging.basicConfig(
     filename='network_analyzer.log',
@@ -39,17 +44,18 @@ def tcp_server():
         client_socket, "example.com", 80))  # Using thread, we call handle_client function.
         client_thread.start()
 
-"""Initialize protocols """
-protocols = ["HTTP", "DNS", "FTP", "SMTP", "Ether"]
+
 def packet_sniffer():
     """This function sniff packets in the network"""
     try:
         #  Initialize register observers
-        logging_observer = LoggingObserver()
-        analysis_observer = AnalysisObserver()
+        logging_observer = LoggingObserver() # For logging
+        capture_observer = CaptureObserver(pcap_file)  # For capture packets
+        analysis_observer = AnalysisObserver() # For analysis
         #  Initialize PacketSniffer
         sniffer = PacketSniffer()
         sniffer.register_observer(logging_observer)
+        sniffer.register_observer(capture_observer)
         sniffer.register_observer(analysis_observer)
 
         #  Add protocols handlers
@@ -68,15 +74,34 @@ def packet_sniffer():
                 logging.error(f"Error packet sniffing: {e}")
     except Exception as e:
         logging.error(f"Error initializing packet sniffer Function: {e}")
+
+def packet_analysis():
+    """Analyze captured packets"""
+    try:
+        analyzer = AnalyzeObserver(pcap_file)
+        analyzer.analyze()
+    except Exception as e:
+        logging.error(f"Error during packet analysis: {e}")
+
 def main():
-    # Establishing sniffer and tcpServer processes.
+    # Establishing sniffer and analysis and tcpServer processes.
     sniffer_process = multiprocessing.Process(target=packet_sniffer)
+    analysis_process = multiprocessing.Process(target=packet_analysis)
     tcp_server_process = multiprocessing.Process(target=tcp_server)
+
     # Starting processes
     sniffer_process.start()
     tcp_server_process.start()
+
+    # Allow some time for packet capture
+    time.sleep(5)
+
+    # Start analysis process
+    analysis_process.start()
+
     # Wait for processes to complete
     sniffer_process.join()
+    analysis_process.join()
     tcp_server_process.join()
 
 
