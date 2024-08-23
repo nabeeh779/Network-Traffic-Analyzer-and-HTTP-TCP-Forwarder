@@ -4,10 +4,12 @@ import logging
 import socket
 import threading
 import multiprocessing
+from ProtocolHandle import *
 logging.basicConfig(filename='network_analyzer.log', level=logging.INFO)  # setting up log file
 
 
 def tcp_server():
+    """This Function Run Tcp server on host 0.0.0.0 means all interfaces and port 8888"""
     def handle_client(client_socket, forward_to_host, forward_to_port):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as forward_socket:
             forward_socket.connect((forward_to_host, forward_to_port))
@@ -29,23 +31,20 @@ def tcp_server():
         client_socket, "example.com", 80))  # Using thread, we call handle_client function.
         client_thread.start()
 
-
+"""Initialize protocol handlers"""
+protocol_handlers = [
+    DnsHandler(),     # For DNS traffic
+    HttpHandler(),    # For HTTP traffic
+    FTPHandler(),     # For FTP traffic
+    SMTPHandler(),    # For SMTP traffic
+    EthHandler() # For Ethernet frames
+]
 def packet_sniffer():
     """This function sniff packets in the network and checks if the packet contains tcp/http layer"""
-
     def packet_callback(packet1):
-
-        print("packet: " + str(packet1))
-        # if packet1.haslayer(scapy.TCP) and packet1.haslayer(scapy.Raw):  # Check if packet contains TCP layer
-        if packet1.haslayer(scapy.Raw):
-            data = packet1[scapy.Raw].load  # Load the raw data.
-            if b"HTTP" in data:  # Detection of http
-                # store src ip and dst ip
-                print("HTTP traffic detected!")
-                src_ip = packet1[scapy.IP].src
-                dst_ip = packet1[scapy.IP].dst
-                logging.info(f"HTTP Packet: {src_ip} -> {dst_ip}, Payload: {data[:50]}")  # saving into file
-
+        for handler in protocol_handlers:   #  Iterate through protocol handlers.
+            if handler.detect(packet1):    #  If handler can process the packet
+                handler.process_packet(packet1) #  Process the packet
     packet = scapy.sniff(store=False,
                          iface="Intel(R) Wi-Fi 6 AX201 160MHz", prn=packet_callback)  # choose the network interface
 
