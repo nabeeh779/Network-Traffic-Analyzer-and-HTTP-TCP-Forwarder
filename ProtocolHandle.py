@@ -1,5 +1,6 @@
 from scapy.all import IP , Raw , DNS , Ether , TCP
 
+"""Protocol Handler"""
 class ProtocolHandler:
     """Base of all protocol handlers"""
     def __init__(self):
@@ -20,7 +21,6 @@ class ProtocolHandler:
         """Process the packet if it matches the protocol. To be overridden by subclasses."""
         raise NotImplementedError
 
-"""Creat protocol classes"""
 class HttpHandler(ProtocolHandler):
     """HTTP Protocol handle"""
     def detect(self,packet):

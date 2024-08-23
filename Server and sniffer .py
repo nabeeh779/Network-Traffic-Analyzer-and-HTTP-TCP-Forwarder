@@ -5,7 +5,15 @@ import socket
 import threading
 import multiprocessing
 from ProtocolHandle import *
-logging.basicConfig(filename='network_analyzer.log', level=logging.INFO)  # setting up log file
+from packet_sniffer import *
+from observers import *
+from factory import *
+
+# setting up logging
+logging.basicConfig(
+    filename='network_analyzer.log',
+    level=logging.INFO ,
+    format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def tcp_server():
@@ -31,24 +39,35 @@ def tcp_server():
         client_socket, "example.com", 80))  # Using thread, we call handle_client function.
         client_thread.start()
 
-"""Initialize protocol handlers"""
-protocol_handlers = [
-    DnsHandler(),     # For DNS traffic
-    HttpHandler(),    # For HTTP traffic
-    FTPHandler(),     # For FTP traffic
-    SMTPHandler(),    # For SMTP traffic
-    EthHandler() # For Ethernet frames
-]
+"""Initialize protocols """
+protocols = ["HTTP", "DNS", "FTP", "SMTP", "Ether"]
 def packet_sniffer():
-    """This function sniff packets in the network and checks if the packet contains tcp/http layer"""
-    def packet_callback(packet1):
-        for handler in protocol_handlers:   #  Iterate through protocol handlers.
-            if handler.detect(packet1):    #  If handler can process the packet
-                handler.process_packet(packet1) #  Process the packet
-    packet = scapy.sniff(store=False,
-                         iface="Intel(R) Wi-Fi 6 AX201 160MHz", prn=packet_callback)  # choose the network interface
+    """This function sniff packets in the network"""
+    try:
+        #  Initialize register observers
+        logging_observer = LoggingObserver()
+        analysis_observer = AnalysisObserver()
+        #  Initialize PacketSniffer
+        sniffer = PacketSniffer()
+        sniffer.register_observer(logging_observer)
+        sniffer.register_observer(analysis_observer)
 
+        #  Add protocols handlers
+        for p in protocols:
+            try:
+                handler = ProtocolHandlerFactory.create_handler(p)
+                sniffer.protocol_handlers.append(handler)
+            except Exception as e:
+                logging.error(f"Error creating handler for protocol {p}: {e}")
 
+        #  Start sniffing by calling scapy.sniff and direct packets to sniffer.sniff_packets function
+        try:
+            scapy.sniff(store=False,
+                                 iface="Intel(R) Wi-Fi 6 AX201 160MHz", prn=sniffer.sniff_packets)  # iface - network interface
+        except Exception as e:
+                logging.error(f"Error packet sniffing: {e}")
+    except Exception as e:
+        logging.error(f"Error initializing packet sniffer Function: {e}")
 def main():
     # Establishing sniffer and tcpServer processes.
     sniffer_process = multiprocessing.Process(target=packet_sniffer)
@@ -63,4 +82,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    print("lol")
