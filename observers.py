@@ -1,24 +1,30 @@
 """Observer Interface"""
-import logging
-import scapy.all as scapy
+
+import logging  # type: ignore
+import scapy.all as scapy  # type: ignore
+
 logging.basicConfig(
-    filename='network_analyzer.log',
+    filename="network_analyzer.log",
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(levelname)s - %(message)s",
 )
+
 
 #  Observer classes
 class PacketObserver:
     def update(self, packet):
         raise NotImplementedError
 
+
 class LoggingObserver(PacketObserver):
     def update(self, packet):
-        logging.info(f"Packet logged: {packet.summary()}") # Log packet summary to file
+        logging.info(f"Packet logged: {packet.summary()}")  # Log packet summary to file
+
 
 class AnalysisObserver(PacketObserver):
     def update(self, packet):
         print(f"Analyzing packet: {packet.summary()}")
+
 
 class CaptureObserver(PacketObserver):
     def __init__(self, pcap_file):
@@ -30,6 +36,7 @@ class CaptureObserver(PacketObserver):
             logging.info(f"Packet captured and saved to {self.pcap_file}")
         except Exception as e:
             logging.error(f"Error capturing packet: {e}")
+
 
 class AnalyzeObserver(PacketObserver):
     def __init__(self, pcap_file):

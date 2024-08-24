@@ -1,5 +1,6 @@
-
 """Packet Sniffer class is the subject in the observer pattern"""
+
+
 class PacketSniffer:
     def __init__(self):
         self.observers = []  #  List to save observers
