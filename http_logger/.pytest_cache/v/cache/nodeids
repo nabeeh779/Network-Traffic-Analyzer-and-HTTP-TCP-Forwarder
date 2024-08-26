@@ -1,0 +1,7 @@
+[
+  "test_http_logger.py::test_get_request",
+  "test_http_logger.py::test_post_request",
+  "test_http_logger.py::test_unsupported_http_methods",
+  "test_loggers.py::test_logger_maker",
+  "test_loggers.py::test_logger_save"
+]
