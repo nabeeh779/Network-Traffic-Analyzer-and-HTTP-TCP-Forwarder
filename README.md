@@ -26,5 +26,5 @@ Network-Traffic-Analyzer-and-HTTP-TCP-Forwarder is a Python tool designed to cap
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/Network-Traffic-Analyzer-and-HTTP-TCP-Forwarder.git
+   git clone https://github.com/nabeeh779/Network-Traffic-Analyzer-and-HTTP-TCP-Forwarder.git
 
